@@ -123,6 +123,8 @@ namespace consoleApplication1
                         command.ExecuteNonQuery();
                     
                         connection.Close();
+
+                        Console.WriteLine("[{0}]TAG: {1} (X = {2}, Y = {3}, Z = {4}", dataAtual, parts[2], parts[3], parts[4], parts[5]);
                     }
                 }
             }
