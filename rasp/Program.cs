@@ -87,8 +87,8 @@ namespace consoleApplication1
 
         static string sqlCommand = 
         @"
-            INSERT INTO pos_register (tag, posX, posY, posZ, data) 
-            VALUES (@tagName, @posX, @posY, @posZ, @dataAtual)
+            INSERT INTO pos_register (tag, pos_X, pos_Y, pos_Z, ins_date) 
+            VALUES (@tag, @posX, @posY, @posZ, @dataAtual)
         ";
 
         static void serialPort1_DataReceived(object sender, SerialDataReceivedEventArgs e)
@@ -114,7 +114,7 @@ namespace consoleApplication1
 
                         command.CommandText = sqlCommand;
 
-                        command.Parameters.AddWithValue("@tagName", parts[2]);
+                        command.Parameters.AddWithValue("@tag", parts[2]);
                         command.Parameters.AddWithValue("@posX", parts[3]);
                         command.Parameters.AddWithValue("@posY", parts[4]);
                         command.Parameters.AddWithValue("@posZ", parts[5]);
