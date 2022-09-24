@@ -13,17 +13,17 @@ public class PositionRegister
     public string TAG { get; set; }
     
     [BsonRepresentation(BsonType.Decimal128)]
-    public decimal POSX { get; set; }
+    public decimal POS_X { get; set; }
     
     [BsonRepresentation(BsonType.Decimal128)]
-    public decimal POSY { get; set; }
+    public decimal POS_Y { get; set; }
     
     [BsonRepresentation(BsonType.Decimal128)]
-    public decimal POSZ { get; set; }
+    public decimal POS_Z { get; set; }
     
     [BsonRepresentation(BsonType.DateTime)]
-    public DateTime DATA { get; set; }
+    public DateTime INS_DATE { get; set; }
     
     [BsonIgnore]
-    public bool ENVIADO { get; set; }
+    public bool SENT { get; set; }
 }

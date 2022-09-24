@@ -1,6 +1,5 @@
 using Microsoft.Data.Sqlite;
 using MongoDB.Driver;
-using MongoDB.Bson;
 using System.Data;
 using System.Reflection;
 
@@ -19,9 +18,11 @@ public class Worker : BackgroundService
     {
         while (!stoppingToken.IsCancellationRequested)
         {
-            _logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
+            _logger.LogInformation("Replication interface start time: {time}", DateTimeOffset.Now);
 
-            await ReplicaDados();
+            await ReplicateData();
+            
+            _logger.LogInformation("Replication interface finish time: {time}", DateTimeOffset.Now);
 
             await Task.Delay(6000, stoppingToken);
         }
@@ -31,26 +32,30 @@ public class Worker : BackgroundService
         @"
             SELECT *
             FROM pos_register 
-            WHERE enviado = 0
+            WHERE sent = 0
         ";
 
     static string sqlUpdate = 
         @"
             UPDATE pos_register 
-            SET enviado = 1
+            SET sent = 1
             WHERE ID = @id
         ";
 
-    private async Task ReplicaDados()
+    private async Task ReplicateData()
     {
-        var listaPosicoes = await CarregaDadosSQLite();
+        _logger.LogInformation("Gathering data from origin DB...");
+        var positionsList = await LoadDataOriginDB();
+        _logger.LogInformation("{count} register(s) loaded", positionsList.Count);
 
-        await EnviaDadosMongoDB(listaPosicoes);
+        _logger.LogInformation("Replicating data to destination DB...");        
+        await SendDataDestinationDB(positionsList);
+        _logger.LogInformation("Data replication finished");       
     }
 
     #region SQLite
 
-    private async Task<List<PositionRegister>> CarregaDadosSQLite()
+    private async Task<List<PositionRegister>> LoadDataOriginDB()
     {
         var queryResult = new List<PositionRegister>();
 
@@ -93,7 +98,8 @@ public class Worker : BackgroundService
 
     #endregion
 
-    private async Task EnviaDadosMongoDB(List<PositionRegister> listaPosicoes)
+    #region MongoDB
+    private async Task SendDataDestinationDB(List<PositionRegister> positionsList)
     {
         try
         {
@@ -109,7 +115,7 @@ public class Worker : BackgroundService
 
                 var positionsCollection = mongoClient.GetDatabase("ftt-tcc-rtls").GetCollection<PositionRegister>("PositionRegister");
 
-                foreach (var posRegister in listaPosicoes)
+                foreach (var posRegister in positionsList)
                 {
                     var auxPosRegister = await positionsCollection.Find(x => x.ID == posRegister.ID)
                                                                   .FirstOrDefaultAsync();
@@ -130,6 +136,8 @@ public class Worker : BackgroundService
             throw;
         }        
     }
+
+    #endregion
 
     #region Query execution
 
