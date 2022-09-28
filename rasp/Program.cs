@@ -6,6 +6,17 @@ namespace consoleApplication1
 {
     public class RTLS_Logger
     {
+        static SqliteConnection connection = new SqliteConnection("Data Source=test.db");
+
+        static string inData = string.Empty;
+        static DateTime dataAtual = new DateTime();
+
+        static string sqlCommand = 
+        @"
+            INSERT INTO pos_register (tag, pos_X, pos_Y, pos_Z, ins_date) 
+            VALUES (@tag, @posX, @posY, @posZ, @dataAtual)
+        ";
+
         static void Main()
         {
             try
@@ -19,7 +30,7 @@ namespace consoleApplication1
                     serialPort1.Close();
                 }
                 
-                var portaCOM = "/dev/ttyACM0";
+                var portaCOM = "COM3"; ///dev/ttyACM0";
                 
                 Console.WriteLine("[{0}] Configuring serial port " + portaCOM + ".", DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss"));
 
@@ -43,26 +54,47 @@ namespace consoleApplication1
                 {
                     Console.WriteLine("[{0}] Serial port configured.", DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss"));
 
-                    serialPort1.DataReceived += new SerialDataReceivedEventHandler(serialPort1_DataReceived);
+                    //serialPort1.DataReceived += new SerialDataReceivedEventHandler(serialPort1_DataReceived);
 
                     // Send \r twice to enter UART shell mode
-                    serialPort1.Write("\r");
-                    serialPort1.Write("\r");
-
+                    serialPort1.Write("\r\r");
+                    Thread.Sleep(1000);
+                    serialPort1.Write("lep\r");
                     Thread.Sleep(1000);
 
-                    serialPort1.Write("lec\r");
+                    //serialPort1.Write("lec\r");
                     
                     Console.WriteLine("[{0}] Listener in UART shell mode.", DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss"));
                     Console.WriteLine("[{0}] Logging data...", DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss"));
 
-                    Console.Read();
+                    while(true)
+                    {
+                        try
+                        {
+                            inData = serialPort1.ReadLine();
+                            
+                            if (!string.IsNullOrWhiteSpace(inData))
+                            {
+                                GravaDadosDB(inData);                                
+                            }
+                            else
+                            {
+                                Console.WriteLine("[{0}] No data", DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss"));
+                            }
+                        }
+                        catch
+                        {
+                            
+                        }
+                    }
+
+                    //Console.Read();
                     
-                    serialPort1.Write("quit");
+                    //serialPort1.Write("quit");
 
-                    serialPort1.Close();
+                    //serialPort1.Close();
 
-                    Console.WriteLine("[{0}] Ending interface execution...", DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss"));
+                    //Console.WriteLine("[{0}] Ending interface execution...", DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss"));
                 }
                 else
                 {
@@ -79,26 +111,11 @@ namespace consoleApplication1
             Console.WriteLine("[{0}] Interface execution ended", DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss"));
         }
 
-        static SerialPort serialPortSender = new SerialPort();
-        static SqliteConnection connection = new SqliteConnection("Data Source=test.db");
-
-        static string inData = string.Empty;
-        static DateTime dataAtual = new DateTime();
-
-        static string sqlCommand = 
-        @"
-            INSERT INTO pos_register (tag, pos_X, pos_Y, pos_Z, ins_date) 
-            VALUES (@tag, @posX, @posY, @posZ, @dataAtual)
-        ";
-
-        static void serialPort1_DataReceived(object sender, SerialDataReceivedEventArgs e)
+        static void GravaDadosDB(string dados)
         {
-            serialPortSender = (SerialPort)sender;
-			
-            inData = serialPortSender.ReadExisting();
-            dataAtual = DateTime.Now;
+            var dataAtual = DateTime.Now;
 
-            var inDataLines = inData.Split("\r\n");                       
+            var inDataLines = dados.Split("\r\n");                       
 
             foreach (var data in inDataLines)
             {
@@ -124,7 +141,7 @@ namespace consoleApplication1
                     
                         connection.Close();
 
-                        Console.WriteLine("[{0}]TAG: {1} (X = {2}, Y = {3}, Z = {4}", dataAtual, parts[2], parts[3], parts[4], parts[5]);
+                        Console.WriteLine("[{0}] TAG: {1} (X = {2}, Y = {3}, Z = {4})", dataAtual, parts[2], parts[3], parts[4], parts[5]);
                     }
                 }
             }

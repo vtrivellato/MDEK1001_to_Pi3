@@ -24,7 +24,7 @@ public class Worker : BackgroundService
             
             _logger.LogInformation("Replication interface finish time: {time}", DateTimeOffset.Now);
 
-            await Task.Delay(6000, stoppingToken);
+            await Task.Delay(600000, stoppingToken);
         }
     }
 
@@ -33,6 +33,7 @@ public class Worker : BackgroundService
             SELECT *
             FROM pos_register 
             WHERE sent = 0
+            ORDER BY 1
         ";
 
     static string sqlUpdate = 
@@ -46,7 +47,7 @@ public class Worker : BackgroundService
     {
         _logger.LogInformation("Gathering data from origin DB...");
         var positionsList = await LoadDataOriginDB();
-        _logger.LogInformation("{count} register(s) loaded", positionsList.Count);
+        _logger.LogInformation("{0} register(s) loaded", positionsList.Count);
 
         _logger.LogInformation("Replicating data to destination DB...");        
         await SendDataDestinationDB(positionsList);
@@ -59,7 +60,7 @@ public class Worker : BackgroundService
     {
         var queryResult = new List<PositionRegister>();
 
-        using (var connection = new SqliteConnection("Data Source=C:\\Users\\victo\\Desktop\\TM\\tcc\\rasp\\test.db"))
+        using (var connection = new SqliteConnection("Data Source=..\\rasp\\test.db"))
         {
             connection.Open();
 
@@ -103,7 +104,7 @@ public class Worker : BackgroundService
     {
         try
         {
-            using (var connection = new SqliteConnection("Data Source=C:\\Users\\victo\\Desktop\\TM\\tcc\\rasp\\test.db"))
+            using (var connection = new SqliteConnection("Data Source=..\\rasp\\test.db"))
             {
                 connection.Open();
 
@@ -187,8 +188,7 @@ public class Worker : BackgroundService
         }
         catch (Exception)
         {
-            return null;
-            throw;
+            return new List<T>();
         }
 
         return list;
@@ -226,22 +226,29 @@ public class Worker : BackgroundService
                 {
                     if (!object.Equals(dr[prop.Name], DBNull.Value))
                     {
-                        switch (prop.PropertyType.Name)
+                        try
                         {
-                            case "String":
-                                prop.SetValue(obj, (string)dr[prop.Name], null);
-                                break;
-                            case "Int32":
-                                prop.SetValue(obj, Convert.ToInt32(dr[prop.Name]), null);
-                                break;
-                            case "Int64":
-                            case "Double":
-                            case "Decimal":
-                                prop.SetValue(obj, Convert.ToDecimal(dr[prop.Name]), null);
-                                break;
-                            default:
-                                break;
+                            switch (prop.PropertyType.Name)
+                            {
+                                case "String":
+                                    prop.SetValue(obj, (string)dr[prop.Name], null);
+                                    break;
+                                case "Int32":
+                                    prop.SetValue(obj, Convert.ToInt32(dr[prop.Name]), null);
+                                    break;
+                                case "Int64":
+                                case "Double":
+                                case "Decimal":
+                                    prop.SetValue(obj, Convert.ToDecimal(dr[prop.Name]), null);
+                                    break;
+                                default:
+                                    break;
+                            }
                         }
+                        catch
+                        {
+                            return default;
+                        }                        
                     }
                 }
                 else
@@ -266,6 +273,7 @@ public class Worker : BackgroundService
         }
         catch (Exception ex)
         {
+            return default;
             throw new Exception($"Erro ao Mapear objeto: {typeof(T).Name}", ex);
         }
     }
@@ -279,6 +287,11 @@ public class Worker : BackgroundService
             while (dr.Read())
             {
                 T item = DataReaderMapObject<T>(dr);
+
+                if (item == null || item.Equals(default(T)))
+                {
+                    continue;
+                }
 
                 list.Add(item!);
             }

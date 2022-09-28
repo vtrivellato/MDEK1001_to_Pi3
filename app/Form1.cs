@@ -1,11 +1,7 @@
 using System.Text.Json;
 using System.Text;
 using System.Text.Json.Serialization;
-using System.Windows.Forms.VisualStyles;
-using System.Buffers.Text;
 using System.Drawing.Imaging;
-using System.Drawing;
-using System.Windows.Forms;
 
 namespace RTLSDataObserver
 {
@@ -35,8 +31,8 @@ namespace RTLSDataObserver
 
                 var dados = JsonSerializer.Serialize(dadosBase, new JsonSerializerOptions()
                 {
-                    // WhenWritingNull      -> somente variáveis nulas
-                    // WhenWritingDefault   -> valor default da variável
+                    // WhenWritingNull      -> somente variï¿½veis nulas
+                    // WhenWritingDefault   -> valor default da variï¿½vel
                     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault,
                     WriteIndented = true
                 });
@@ -55,7 +51,7 @@ namespace RTLSDataObserver
 
                 if (string.IsNullOrWhiteSpace(heatmapBase64))
                 {
-                    MessageBox.Show("Não foi possível gerar a imagem", "Erro ao gerar mapa de calor", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show("Nï¿½o foi possï¿½vel gerar a imagem", "Erro ao gerar mapa de calor", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     return;
                 }
 
@@ -69,7 +65,7 @@ namespace RTLSDataObserver
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Exceção lançada ao gerar mapa de calor" + Environment.NewLine + ex.Message, "Erro ao gerar mapa de calor", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Exceï¿½ï¿½o lanï¿½ada ao gerar mapa de calor" + Environment.NewLine + ex.Message, "Erro ao gerar mapa de calor", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
     }

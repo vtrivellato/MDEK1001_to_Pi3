@@ -1,6 +1,6 @@
 -- SQLite
 
-/*CREATE TABLE pos_register 
+CREATE TABLE pos_register 
 (
     id INTEGER PRIMARY KEY AUTOINCREMENT, 
     tag TEXT, 
@@ -9,7 +9,7 @@
     pos_Z DECIMAL(5, 2), 
     ins_date DATETIME, 
     sent BOOLEAN DEFAULT FALSE
-);*/
+);
 
 SELECT * 
 FROM pos_register 
