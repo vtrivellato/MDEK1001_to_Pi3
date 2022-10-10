@@ -1,5 +1,4 @@
 using Microsoft.Data.Sqlite;
-using System;
 using System.IO.Ports;
 
 namespace consoleApplication1
@@ -9,7 +8,6 @@ namespace consoleApplication1
         static SqliteConnection connection = new SqliteConnection("Data Source=test.db");
 
         static string inData = string.Empty;
-        static DateTime dataAtual = new DateTime();
 
         static string sqlCommand = 
         @"
@@ -54,15 +52,12 @@ namespace consoleApplication1
                 {
                     Console.WriteLine("[{0}] Serial port configured.", DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss"));
 
-                    //serialPort1.DataReceived += new SerialDataReceivedEventHandler(serialPort1_DataReceived);
-
                     // Send \r twice to enter UART shell mode
                     serialPort1.Write("\r\r");
                     Thread.Sleep(1000);
-                    serialPort1.Write("lep\r");
+                    serialPort1.Write("lec\r");
+                    //serialPort1.Write("lep\r");
                     Thread.Sleep(1000);
-
-                    //serialPort1.Write("lec\r");
                     
                     Console.WriteLine("[{0}] Listener in UART shell mode.", DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss"));
                     Console.WriteLine("[{0}] Logging data...", DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss"));
@@ -87,14 +82,6 @@ namespace consoleApplication1
                             
                         }
                     }
-
-                    //Console.Read();
-                    
-                    //serialPort1.Write("quit");
-
-                    //serialPort1.Close();
-
-                    //Console.WriteLine("[{0}] Ending interface execution...", DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss"));
                 }
                 else
                 {
