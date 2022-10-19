@@ -24,7 +24,7 @@ public class Worker : BackgroundService
             
             _logger.LogInformation("Replication interface finish time: {time}", DateTimeOffset.Now);
 
-            await Task.Delay(600000, stoppingToken);
+            await Task.Delay(60000, stoppingToken);
         }
     }
 
@@ -33,7 +33,9 @@ public class Worker : BackgroundService
             SELECT *
             FROM pos_register 
             WHERE sent = 0
+                AND pos_x != 'nan'
             ORDER BY 1
+            LIMIT 1000
         ";
 
     static string sqlUpdate = 
@@ -112,6 +114,7 @@ public class Worker : BackgroundService
                 {
                     connection.Open();
                 }
+
                 var mongoClient = new MongoClient("mongodb+srv://ftt-tcc-rtls:xIaXng8NwfkTGQYn@cluster0.w8pmvla.mongodb.net/?retryWrites=true&w=majority");
 
                 var positionsCollection = mongoClient.GetDatabase("ftt-tcc-rtls").GetCollection<PositionRegister>("PositionRegister");
@@ -241,13 +244,16 @@ public class Worker : BackgroundService
                                 case "Decimal":
                                     prop.SetValue(obj, Convert.ToDecimal(dr[prop.Name]), null);
                                     break;
+                                case "DateTime":
+                                    prop.SetValue(obj, Convert.ToDateTime(dr[prop.Name]), null);
+                                    break;
                                 default:
                                     break;
                             }
                         }
                         catch
                         {
-                            return default;
+                            prop.SetValue(obj, Convert.ToDecimal(dr[prop.Name]), null);
                         }                        
                     }
                 }
