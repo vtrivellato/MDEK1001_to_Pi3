@@ -79,7 +79,7 @@ public class Worker : BackgroundService
         return queryResult;
     }
 
-    private async Task<bool> AtualizaDadosSQLite(SqliteConnection connection, PositionRegister posregister)
+    private async Task<bool> UpdateSQLiteData(SqliteConnection connection, PositionRegister posregister)
     {       
         try
         {
@@ -102,6 +102,7 @@ public class Worker : BackgroundService
     #endregion
 
     #region MongoDB
+    
     private async Task SendDataDestinationDB(List<PositionRegister> positionsList)
     {
         try
@@ -129,7 +130,7 @@ public class Worker : BackgroundService
                         positionsCollection.InsertOne(posRegister);   
                     }
   
-                    await AtualizaDadosSQLite(connection, posRegister);           
+                    await UpdateSQLiteData(connection, posRegister);           
                 }                
         
                 connection.Close();

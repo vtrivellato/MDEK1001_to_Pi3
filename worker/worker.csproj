@@ -10,7 +10,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.Sqlite" Version="6.0.9" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.1" />
-    <PackageReference Include="MongoDB.Driver" Version="2.17.1" />
+    <PackageReference Include="MongoDB.Driver" Version="2.18.0" />
   </ItemGroup>
 
   <PropertyGroup>
