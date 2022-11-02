@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json.Serialization;
 using System.Drawing.Imaging;
 using MongoDB.Driver;
+using System.Windows.Forms;
 
 namespace RTLSDataObserver
 {
@@ -18,6 +19,7 @@ namespace RTLSDataObserver
         private void Form1_Load(object sender, EventArgs e)
         {
             this.Size = new Size(1024, 666);
+            pictureBox1.SizeMode = PictureBoxSizeMode.StretchImage;
 
             try
             {
@@ -30,6 +32,7 @@ namespace RTLSDataObserver
                 var filter = filterBuilder.Empty;
 
                 positionRegisterList = positionsCollection.Find(filter).ToList();
+                positionRegisterList = positionRegisterList.OrderBy(x => x.INS_DATE).ToList();
             }
             catch (Exception)
             {
@@ -45,40 +48,57 @@ namespace RTLSDataObserver
             }
         }
 
-        private void button1_Click(object sender, EventArgs e)
+        private async void button1_Click(object sender, EventArgs e)
+        {
+            pictureBox2.Visible = true;
+            pictureBox1.Image = null;
+
+            var filteredData = positionRegisterList.Where(x => x.INS_DATE.Date == dateTimePicker1.Value.Date).Select(r => new { x = r.POS_X, y = r.POS_Y});
+
+            var xCoordinates = filteredData.Select(x => x.x).ToList();
+            var yCoordinates = filteredData.Select(y => y.y).ToList().ToList();
+
+            await GenerateHeatMap(xCoordinates, yCoordinates);
+        }
+
+        private async void button2_Click(object sender, EventArgs e)
+        {
+            pictureBox2.Visible = true;
+            pictureBox1.Image = null;
+
+            var filteredData = positionRegisterList.Select(r => new { x = r.POS_X, y = r.POS_Y });
+
+            var xCoordinates = filteredData.Select(x => x.x).ToList();
+            var yCoordinates = filteredData.Select(y => y.y).ToList().ToList();
+
+            await GenerateHeatMap(xCoordinates, yCoordinates);
+        }
+
+        private async Task GenerateHeatMap(List<decimal> xCoordinates, List<decimal> yCoordinates)
         {
             try
             {
-                var filteredData = positionRegisterList.Where(x => x.INS_DATE.Date == dateTimePicker1.Value.Date);
-
-                var xCoordinates = filteredData.Select(x => x.POS_X).ToList().OrderBy(x => x);
-                var yCoordinates = filteredData.Select(y => y.POS_Y).ToList().OrderBy(y => y);
-
                 var dadosBase = new
                 {
                     x = xCoordinates,
-                    y = yCoordinates,
-                    grid_size = 0.2m,
-                    h = 8
+                    y = yCoordinates
                 };
 
                 var dados = JsonSerializer.Serialize(dadosBase, new JsonSerializerOptions()
                 {
-                    // WhenWritingNull      -> somente vari�veis nulas
-                    // WhenWritingDefault   -> valor default da vari�vel
                     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault,
                     WriteIndented = true
                 });
 
                 var heatmapBase64 = string.Empty;
 
-                using (var client = new HttpClient { BaseAddress = new Uri("https://fg2d4mx1j6.execute-api.us-east-1.amazonaws.com") })
+                using (var client = new HttpClient { BaseAddress = new Uri("https://fg2d4mx1j6.execute-api.us-east-1.amazonaws.com/test/heatmaps/") })
                 {
                     client.Timeout = new TimeSpan(0, 0, 30);
 
                     using var content = new StringContent(dados, Encoding.UTF8, "application/json");
 
-                    var returnData = client.PostAsync("/test/heatmaps", content).Result;
+                    var returnData = await client.PostAsync("/test/heatmaps", content);
                     heatmapBase64 = returnData.Content.ReadAsStringAsync().Result;
                 }
 
@@ -92,10 +112,15 @@ namespace RTLSDataObserver
                 using var bmp = new Bitmap(ms);
 
                 pictureBox1.Image = bmp.Clone(new Rectangle(0, 0, bmp.Width, bmp.Height), PixelFormat.DontCare);
+                pictureBox1.SizeMode = PictureBoxSizeMode.StretchImage;
             }
             catch (Exception ex)
             {
                 MessageBox.Show("Exceção lançada ao gerar mapa de calor" + Environment.NewLine + ex.Message, "Erro ao gerar mapa de calor", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                pictureBox2.Visible = false;
             }
         }
     }
