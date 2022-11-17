@@ -1,9 +1,8 @@
-using System.Text.Json;
-using System.Text;
-using System.Text.Json.Serialization;
-using System.Drawing.Imaging;
 using MongoDB.Driver;
-using System.Windows.Forms;
+using System.Drawing.Imaging;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace RTLSDataObserver
 {
@@ -20,6 +19,12 @@ namespace RTLSDataObserver
         {
             this.Size = new Size(1024, 666);
             pictureBox1.SizeMode = PictureBoxSizeMode.StretchImage;
+
+            trackBar1.Value = 2;
+            label3.Text = $"Distância mínima: {trackBar1.Value}";
+
+            trackBar2.Value = 50;
+            label4.Text = $"Blur (agrupamento): {trackBar2.Value}";
 
             try
             {
@@ -45,20 +50,29 @@ namespace RTLSDataObserver
 
                 dateTimePicker1.MinDate = minDate;
                 dateTimePicker1.MaxDate = maxDate;
+                dateTimePicker2.MinDate = minDate;
+                dateTimePicker2.MaxDate = maxDate;
             }
         }
 
         private async void button1_Click(object sender, EventArgs e)
         {
+            if (dateTimePicker1.Value.Date > dateTimePicker2.Value.Date)
+            {
+                MessageBox.Show("Data inicial deve ser menor ou igual a data final", "Erro de data", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
             pictureBox2.Visible = true;
             pictureBox1.Image = null;
 
-            var filteredData = positionRegisterList.Where(x => x.INS_DATE.Date == dateTimePicker1.Value.Date).Select(r => new { x = r.POS_X, y = r.POS_Y});
+            var filteredData = positionRegisterList.Where(x => x.INS_DATE.Date >= dateTimePicker1.Value.Date && x.INS_DATE.Date <= dateTimePicker2.Value.Date)
+                                                   .Select(r => new { x = r.POS_X, y = r.POS_Y});
 
             var xCoordinates = filteredData.Select(x => x.x).ToList();
             var yCoordinates = filteredData.Select(y => y.y).ToList().ToList();
 
-            await GenerateHeatMap(xCoordinates, yCoordinates);
+            await GenerateHeatMap(xCoordinates, yCoordinates, trackBar1.Value, trackBar2.Value);
         }
 
         private async void button2_Click(object sender, EventArgs e)
@@ -71,17 +85,19 @@ namespace RTLSDataObserver
             var xCoordinates = filteredData.Select(x => x.x).ToList();
             var yCoordinates = filteredData.Select(y => y.y).ToList().ToList();
 
-            await GenerateHeatMap(xCoordinates, yCoordinates);
+            await GenerateHeatMap(xCoordinates, yCoordinates, trackBar1.Value, trackBar2.Value);
         }
 
-        private async Task GenerateHeatMap(List<decimal> xCoordinates, List<decimal> yCoordinates)
+        private async Task GenerateHeatMap(List<decimal> xCoordinates, List<decimal> yCoordinates, decimal minDistance, decimal blur)
         {
             try
             {
                 var dadosBase = new
                 {
                     x = xCoordinates,
-                    y = yCoordinates
+                    y = yCoordinates, 
+                    min_distance = minDistance,
+                    blur = blur
                 };
 
                 var dados = JsonSerializer.Serialize(dadosBase, new JsonSerializerOptions()
@@ -122,6 +138,16 @@ namespace RTLSDataObserver
             {
                 pictureBox2.Visible = false;
             }
+        }
+
+        private void trackBar1_Scroll(object sender, EventArgs e)
+        {
+            label3.Text = $"Distância mínima: {trackBar1.Value}";
+        }
+
+        private void trackBar2_Scroll(object sender, EventArgs e)
+        {
+            label4.Text = $"Blur (agrupamento): {trackBar2.Value}";
         }
     }
 }
